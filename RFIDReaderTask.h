@@ -11,10 +11,11 @@
 
 class SoftwareSerial;
 class DoorLatchTask;
+class UpdateACLTask;
 
 class RFIDReaderTask: public Task {
 public:
-  RFIDReaderTask(SoftwareSerial& _rfidSerial, DoorLatchTask& _latchTask);
+  RFIDReaderTask(SoftwareSerial& _rfidSerial, DoorLatchTask& _latchTask, UpdateACLTask& _aclTask);
   virtual ~RFIDReaderTask();
 
   virtual bool canRun(uint32_t now);
@@ -27,6 +28,7 @@ private:
 
   SoftwareSerial & rfidSerial;
   DoorLatchTask& latchTask;
+  UpdateACLTask& aclTask;
   String serialBuffer;
 };
 

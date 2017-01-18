@@ -19,7 +19,6 @@ public:
   void blinkDoor();
 
 private:
-
   void openDoorForTime(uint32_t openTime);
   int doorPin;
 };

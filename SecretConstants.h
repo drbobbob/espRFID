@@ -8,6 +8,7 @@
 
 extern const char* ssid;
 extern const char* password;
+extern const char* mdnsName;
 
 extern const char* GScriptId;
 

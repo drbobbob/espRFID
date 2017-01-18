@@ -9,12 +9,13 @@
 #include <SoftwareSerial.h>
 #include <FS.h>
 #include "DoorLatchTask.h"
+#include "UpdateACLTask.h"
 
-
-RFIDReaderTask::RFIDReaderTask(SoftwareSerial& _rfidSerial, DoorLatchTask& _latchTask)
+RFIDReaderTask::RFIDReaderTask(SoftwareSerial& _rfidSerial, DoorLatchTask& _latchTask, UpdateACLTask& _aclTask)
 : Task()
 , rfidSerial(_rfidSerial)
 , latchTask(_latchTask)
+, aclTask(_aclTask)
 , serialBuffer()
 {
   rfidSerial.begin(9600);
@@ -54,24 +55,13 @@ void RFIDReaderTask::handleChar(char c)
 
 void RFIDReaderTask::validateCard()
 {
-  bool validated = false;
-  if(SPIFFS.exists("acl"))
+  bool validated = aclTask.validateCard(serialBuffer);
+  if(validated)
   {
-    File f = SPIFFS.open("acl", "r");
-    while(f.available())
-    {
-      String line = f.readStringUntil('\n');
-      if(line == serialBuffer)
-      {
-        Serial.println("Validated Card");
-        latchTask.openDoor();
-        validated = true;
-        break;
-      }
-    }
-    f.close();
+    Serial.println("Validated Card");
+    latchTask.openDoor();
   }
-  if(!validated)
+  else
   {
     Serial.println("Card did not validate");
   }

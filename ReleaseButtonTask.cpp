@@ -14,12 +14,9 @@ ReleaseButtonTask::ReleaseButtonTask(int pin, DoorLatchTask& _latchTask, UpdateA
 , latchTask(_latchTask)
 , updateTask(_updateTask)
 {
-  // TODO Auto-generated constructor stub
-
 }
 
 ReleaseButtonTask::~ReleaseButtonTask() {
-  // TODO Auto-generated destructor stub
 }
 
 void ReleaseButtonTask::ButtonPressed()

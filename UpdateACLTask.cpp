@@ -12,7 +12,7 @@
 
 #include <FS.h>
 
-const int BUTTON_HOLD_TIME = 4000;
+const int BUTTON_HOLD_TIME = 14000;
 
 //#define DEBUG   //If you comment this line, the DPRINT & DPRINTLN lines are defined as blank.
 #ifdef DEBUG    //Macros are usually in all capital letters.
@@ -30,6 +30,8 @@ const char* host = "script.google.com";
 const char* googleRedirHost = "script.googleusercontent.com";
 
 String url = String("/macros/s/") + GScriptId + "/exec?";
+
+const char* aclFilename = "acl";
 
 
 UpdateACLTask::UpdateACLTask(uint32_t interval, DoorLatchTask& _latchTask)
@@ -98,7 +100,7 @@ void UpdateACLTask::downloadACL()
   if(client.connectRedir(url, host, googleRedirHost))
   {
     DPRINTLN("Connected, reading stuff");
-    File f = SPIFFS.open("acl", "w");
+    File f = SPIFFS.open(aclFilename, "w");
 
     while(client.connected())
     {
@@ -119,16 +121,49 @@ void UpdateACLTask::downloadACL()
         break;
       }
     }
-    client.stop();
     f.close();
   }
   else
   {
     DPRINTLN("Failed at connecting");
-    client.stop();
   }
-
+  client.stop();
   DPRINTLN("Done with reading");
 }
 
+
+bool UpdateACLTask::validateCard(const String& card)
+{
+  bool validated = false;
+  if(SPIFFS.exists(aclFilename))
+  {
+    File f = SPIFFS.open(aclFilename, "r");
+    while(f.available())
+    {
+      String line = f.readStringUntil('\n');
+      if(line == card)
+      {
+        Serial.println("Validated Card");
+        latchTask.openDoor();
+        validated = true;
+        break;
+      }
+    }
+    f.close();
+  }
+  return validated;
+}
+
+String UpdateACLTask::getACL()
+{
+  File f = SPIFFS.open(aclFilename, "r");
+  String output;
+  while(f.available())
+  {
+    String line = f.readStringUntil('\n');
+    output += "\n";
+    output += line;
+  }
+  return output;
+}
 

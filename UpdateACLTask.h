@@ -9,6 +9,7 @@
 #include "Task.h"
 
 class DoorLatchTask;
+class String;
 
 class UpdateACLTask: public TimedTask {
 public:
@@ -20,6 +21,10 @@ public:
   void startManualTimer();
   void startShortManualTimer();
   void stopManualTimer();
+
+  bool validateCard(const String& card);
+
+  String getACL();
 
 private:
 

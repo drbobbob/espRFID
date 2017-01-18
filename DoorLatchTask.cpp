@@ -6,8 +6,8 @@
 #include "DoorLatchTask.h"
 #include "Arduino.h"
 
-uint32_t DOOR_OPEN_TIME = 10000;
-uint32_t DOOR_BLINK_TIME = 100;
+const uint32_t DOOR_OPEN_TIME = 10000;
+const uint32_t DOOR_BLINK_TIME = 100;
 
 DoorLatchTask::DoorLatchTask(int pin)
 : SingleShotTimedTask(0)

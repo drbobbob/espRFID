@@ -26,11 +26,6 @@
 // Serial read
 // web page for seeing ACL
 // Automated refresh of ACL (saved on file system)
-// 
-
-ESP8266WebServer server(80);
-
-const int led = 13;
 
 //pin definitions
 //pins with pullup: 4, 5, 12, 13, 14
@@ -46,98 +41,25 @@ SoftwareSerial rfidSerial(RFID_READ_PIN, RFID_WRITE_PIN);
 
 BlinkTask external1LED(LED1_PIN, 500);
 DoorLatchTask latchTask(RELAY_PIN);
-RFIDReaderTask readerTask(rfidSerial, latchTask);
 UpdateACLTask aclTask(1000l*60*60*24, latchTask);
+RFIDReaderTask readerTask(rfidSerial, latchTask, aclTask);
 ReleaseButtonTask releaseTask(RELEASE_BUTTON, latchTask, aclTask);
-ServerTask serverTask(server);
+ServerTask serverTask(aclTask);
 
-void handleRoot() {
-  digitalWrite(led, 1);
+Task* tasks[] = {&external1LED, &releaseTask, &latchTask, &readerTask, &aclTask, &serverTask};
 
-  server.send(200, "text/plain", "hello from esp8266!");
-  digitalWrite(led, 0);
-}
-
-void handleACL()
-{
-  File f = SPIFFS.open("acl", "r");
-  String output;
-  output += "The ACL is:";
-  while(f.available())
-  {
-    String line = f.readStringUntil('\n');
-    output += "\n";
-    output += line;
-  }
-  server.send(200, "text/plain", output);
-}
-
-void handleUpdateACL()
-{
-  aclTask.startShortManualTimer();
-  server.send(200, "text/plain", "Update started, check /acl for the list");
-}
-
-void handleNotFound(){
-  digitalWrite(led, 1);
-  String message = "File Not Found\n\n";
-  message += "URI: ";
-  message += server.uri();
-  message += "\nMethod: ";
-  message += (server.method() == HTTP_GET)?"GET":"POST";
-  message += "\nArguments: ";
-  message += server.args();
-  message += "\n";
-  for (uint8_t i=0; i<server.args(); i++){
-    message += " " + server.argName(i) + ": " + server.arg(i) + "\n";
-  }
-  server.send(404, "text/plain", message);
-  digitalWrite(led, 0);
-}
+TaskScheduler ts(tasks, NUM_TASKS(tasks));
 
 void setup() {
   // put your setup code here, to run once:
-  pinMode(led, OUTPUT);
-  digitalWrite(led, 0);
   Serial.begin(115200);
-  WiFi.begin(ssid, password);
-  Serial.println("");
+  Serial.println("I'm booting");
+  SPIFFS.begin();
 
-  // Wait for connection
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
-  Serial.println("");
-  Serial.print("Connected to ");
-  Serial.println(ssid);
-  Serial.print("IP address: ");
-  Serial.println(WiFi.localIP());
-
-  if (MDNS.begin("doorESP")) {
-    Serial.println("MDNS responder started");
-  }
-
-  server.on("/", handleRoot);
-  server.on("/acl", handleACL);
-  server.on("/updateAcl", handleUpdateACL);
-
-  server.onNotFound(handleNotFound);
-
-  server.begin();
-  Serial.println("HTTP server started");
+//    WiFi.begin(ssid, password); 
 }
 
 
 void loop() {
-  // put your main code here, to run repeatedly:
-
-  SPIFFS.begin();
-
-  Task* tasks[] = {&external1LED, &releaseTask, &latchTask, &readerTask, &aclTask, &serverTask};
-
-  TaskScheduler ts(tasks, sizeof(tasks) / sizeof(tasks[0]));
-
-  ts.run();
-  
+  ts.runOnce();
 }

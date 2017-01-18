@@ -7,19 +7,35 @@
 #define SERVERTASK_H_
 
 #include "Task.h"
+#include <ESP8266WebServer.h>
 
-class ESP8266WebServer;
+class UpdateACLTask;
 
-class ServerTask: public Task {
+class ServerTask: public TimedTask {
 public:
-  ServerTask(ESP8266WebServer& _server);
+  enum ServerState {
+    SERVER_START,
+    SERVER_WAIT_FOR_CONNECTION,
+    SERVER_RUNNING
+  };
+  ServerTask(UpdateACLTask& _aclTask);
   virtual ~ServerTask();
 
-  virtual bool canRun(uint32_t now);
   virtual void run(uint32_t now);
 
   private:
-  ESP8266WebServer& server;
+  void StartState(uint32_t now);
+  void WaitForConnectionState(uint32_t now);
+  void RunningState(uint32_t now);
+
+  void handleRoot();
+  void handleACL();
+  void handleUpdateACL();
+  void handleNotFound();
+
+  UpdateACLTask& aclTask;
+  ESP8266WebServer server;
+  ServerState CurrentState;
 };
 
 #endif /* BUTTONPRINTER_H_ */
