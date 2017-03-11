@@ -36,7 +36,7 @@ const char* aclFilename = "acl";
 
 UpdateACLTask::UpdateACLTask(uint32_t interval, DoorLatchTask& _latchTask)
 : TimedTask(0)
-, nextAutomatedTime(0)
+, nextAutomatedTime(interval)
 , automatedInterval(interval)
 , latchTask(_latchTask)
 {
@@ -93,6 +93,7 @@ void UpdateACLTask::manualUpdate()
 
 void UpdateACLTask::downloadACL()
 {
+  Serial.println("Updating ACL");
   HTTPSRedirect client(httpsPort);
   DPRINT("Connecting to ");
   DPRINTLN(host);
@@ -134,6 +135,7 @@ void UpdateACLTask::downloadACL()
 
 bool UpdateACLTask::validateCard(const String& card)
 {
+  String shortCard = card.substring(0, 10);
   bool validated = false;
   if(SPIFFS.exists(aclFilename))
   {
@@ -141,7 +143,7 @@ bool UpdateACLTask::validateCard(const String& card)
     while(f.available())
     {
       String line = f.readStringUntil('\n');
-      if(line == card)
+      if(line == shortCard)
       {
         Serial.println("Validated Card");
         latchTask.openDoor();

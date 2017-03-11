@@ -21,12 +21,14 @@ ReleaseButtonTask::~ReleaseButtonTask() {
 
 void ReleaseButtonTask::ButtonPressed()
 {
+  Serial.println("Release button pressed");
   latchTask.openDoor();
   updateTask.startManualTimer();
 }
 
 void ReleaseButtonTask::ButtonReleased()
 {
+  Serial.println("Release button released");
   updateTask.stopManualTimer();
 }
 

@@ -22,6 +22,7 @@ DoorLatchTask::~DoorLatchTask() {
 
 void DoorLatchTask::run(uint32_t now)
 {
+  Serial.println("Latching door");
   digitalWrite(doorPin, LOW);
 }
 
@@ -37,6 +38,7 @@ void DoorLatchTask::blinkDoor()
 
 void DoorLatchTask::openDoorForTime(uint32_t openTime)
 {
+  Serial.println("Opening door");
   digitalWrite(doorPin, HIGH);
   setRunTime(millis() + openTime);
   setRunnable();
