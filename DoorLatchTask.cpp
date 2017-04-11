@@ -6,7 +6,7 @@
 #include "DoorLatchTask.h"
 #include "Arduino.h"
 
-const uint32_t DOOR_OPEN_TIME = 10000;
+const uint32_t DOOR_OPEN_TIME = 5000;
 const uint32_t DOOR_BLINK_TIME = 100;
 
 DoorLatchTask::DoorLatchTask(int pin)
@@ -43,4 +43,3 @@ void DoorLatchTask::openDoorForTime(uint32_t openTime)
   setRunTime(millis() + openTime);
   setRunnable();
 }
-

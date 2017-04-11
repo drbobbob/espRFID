@@ -1,3 +1,5 @@
+#include <Arduino.h>
+
 #include <SoftwareSerial.h>
 
 #include <ESP8266HTTPClient.h>
