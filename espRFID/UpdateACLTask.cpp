@@ -7,6 +7,7 @@
 #include "Arduino.h"
 
 #include "DoorLatchTask.h"
+#include "BlinkPatternTask.h"
 #include "HTTPSRedirect.h"
 #include "SecretConstants.h"
 
@@ -34,11 +35,13 @@ String url = String("/macros/s/") + GScriptId + "/exec?";
 const char* aclFilename = "acl";
 
 
-UpdateACLTask::UpdateACLTask(uint32_t interval, DoorLatchTask& _latchTask)
+UpdateACLTask::UpdateACLTask(uint32_t interval, DoorLatchTask& _latchTask, BlinkPatternTask& _blinkTask)
 : TimedTask(0)
 , nextAutomatedTime(interval)
 , automatedInterval(interval)
+, lastUpdateLog()
 , latchTask(_latchTask)
+, blinkTask(_blinkTask)
 {
 }
 
@@ -79,34 +82,46 @@ bool UpdateACLTask::isAutomatedUpdate()
 
 void UpdateACLTask::automatedUpdate()
 {
-  incRunTime(automatedInterval);
-  nextAutomatedTime = runTime;
-  downloadACL();
+  if(downloadACL())
+  {
+    incRunTime(automatedInterval);
+    nextAutomatedTime = runTime;
+  }
 }
 
 void UpdateACLTask::manualUpdate()
 {
-  setRunTime(nextAutomatedTime);
-  downloadACL();
-  latchTask.blinkDoor();
+  if(downloadACL())
+  {
+    setRunTime(nextAutomatedTime);
+    latchTask.blinkDoor();
+  }
 }
 
-void UpdateACLTask::downloadACL()
+bool UpdateACLTask::downloadACL()
 {
+  bool success = false;
+  Serial.print("My update interval is ");
+  Serial.println(automatedInterval);
+
+  lastUpdateLog = "";
   Serial.println("Updating ACL");
   HTTPSRedirect client(httpsPort);
   DPRINT("Connecting to ");
   DPRINTLN(host);
+  lastUpdateLog += "Updating ACL\n";
 
   if(client.connectRedir(url, host, googleRedirHost))
   {
+    Serial.println("Connected, reading stuff");
     DPRINTLN("Connected, reading stuff");
+    lastUpdateLog += "Connected, reading stuff\n";
     File f = SPIFFS.open(aclFilename, "w");
 
     while(client.connected())
     {
       String line = client.readStringUntil('\n');
-      
+
       int separatorIndex = line.indexOf('|');
       if(separatorIndex != -1)
       {
@@ -115,10 +130,15 @@ void UpdateACLTask::downloadACL()
         f.write((const uint8_t*)card.c_str(), card.length());
         f.write('\n');
       }
-      
+
+      lastUpdateLog += "Read Line: ";
+      lastUpdateLog += line;
+      lastUpdateLog += '\n';
       DPRINTLN(line);
       if(line == "\r")
       {
+        success = true;
+        blinkTask.setBlinkCounts(1,1);
         break;
       }
     }
@@ -126,10 +146,14 @@ void UpdateACLTask::downloadACL()
   }
   else
   {
+    blinkTask.setBlinkCounts(1,2);
+    lastUpdateLog += "Failed at connecting";
     DPRINTLN("Failed at connecting");
   }
   client.stop();
   DPRINTLN("Done with reading");
+  lastUpdateLog += "Done with reading\n";
+  return success;
 }
 
 
@@ -169,3 +193,7 @@ String UpdateACLTask::getACL()
   return output;
 }
 
+String UpdateACLTask::getACLLog()
+{
+  return lastUpdateLog;
+}

@@ -26,6 +26,11 @@ void ServerTask::handleACL()
   server.send(200, "text/plain", output);
 }
 
+void ServerTask::handleACLLog()
+{
+  server.send(200, "text/plain", aclTask.getACLLog());
+}
+
 void ServerTask::handleUpdateACL()
 {
   aclTask.startShortManualTimer();
@@ -100,19 +105,23 @@ void ServerTask::WaitForConnectionState(uint32_t now)
     Serial.println(ssid);
     Serial.print("IP address: ");
     Serial.println(WiFi.localIP());
-  
+
     if (MDNS.begin(mdnsName)) {
       Serial.println("MDNS responder started");
     }
-  
+
     server.on("/", std::bind(&ServerTask::handleRoot, this));
     server.on("/acl", std::bind(&ServerTask::handleACL, this));
     server.on("/updateAcl", std::bind(&ServerTask::handleUpdateACL, this));
-  
+    server.on("/aclLog", std::bind(&ServerTask::handleACLLog, this));
+
     server.onNotFound(std::bind(&ServerTask::handleNotFound, this));
-  
+
     server.begin();
     Serial.println("HTTP server started");
+
+    MDNS.addService("http", "tcp", 80);
+    
     CurrentState = SERVER_RUNNING;
     setRunTime(now - 1);
   }
@@ -126,7 +135,6 @@ void ServerTask::WaitForConnectionState(uint32_t now)
 void ServerTask::RunningState(uint32_t now)
 {
   server.handleClient();
-  yield();  
+  yield();
   setRunTime(now - 1);
 }
-

@@ -30,6 +30,7 @@ public:
 
   void handleRoot();
   void handleACL();
+  void handleACLLog();
   void handleUpdateACL();
   void handleNotFound();
 

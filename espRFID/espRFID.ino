@@ -41,9 +41,10 @@ const int RFID_WRITE_PIN = 4;
 
 SoftwareSerial rfidSerial(RFID_READ_PIN, RFID_WRITE_PIN);
 
-BlinkTask external1LED(LED1_PIN, 500);
+BlinkPatternTask external1LED(2, HIGH);
 DoorLatchTask latchTask(RELAY_PIN);
-UpdateACLTask aclTask(1000l*60*60*24, latchTask);
+UpdateACLTask aclTask(1000l*60*60*24, latchTask, external1LED);
+
 RFIDReaderTask readerTask(rfidSerial, latchTask, aclTask);
 ReleaseButtonTask releaseTask(RELEASE_BUTTON, latchTask, aclTask);
 ServerTask serverTask(aclTask);
@@ -58,7 +59,7 @@ void setup() {
   Serial.println("I'm booting");
   SPIFFS.begin();
 
-//    WiFi.begin(ssid, password); 
+//    WiFi.begin(ssid, password);
 }
 
 
