@@ -11,8 +11,6 @@
 #include <TaskScheduler.h>
 #include <MyTasks.h>
 
-#include "HTTPSRedirect.h"
-
 #include "ReleaseButtonTask.h"
 #include "DoorLatchTask.h"
 #include "RFIDReaderTask.h"

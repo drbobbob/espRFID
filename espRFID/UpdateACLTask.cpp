@@ -8,9 +8,9 @@
 
 #include "DoorLatchTask.h"
 #include "BlinkPatternTask.h"
-#include "HTTPSRedirect.h"
 #include "SecretConstants.h"
 
+#include <ESP8266HTTPClient.h>
 #include <FS.h>
 
 const int BUTTON_HOLD_TIME = 14000;
@@ -24,13 +24,6 @@ const int BUTTON_HOLD_TIME = 14000;
   #define DPRINTLN(...)   //now defines a blank line
 #endif
 
-
-const int httpsPort = 443;
-
-const char* host = "script.google.com";
-const char* googleRedirHost = "script.googleusercontent.com";
-
-String url = String("/macros/s/") + GScriptId + "/exec?";
 
 const char* aclFilename = "acl";
 
@@ -106,51 +99,72 @@ bool UpdateACLTask::downloadACL()
 
   lastUpdateLog = "";
   Serial.println("Updating ACL");
-  HTTPSRedirect client(httpsPort);
-  DPRINT("Connecting to ");
-  DPRINTLN(host);
   lastUpdateLog += "Updating ACL\n";
 
-  if(client.connectRedir(url, host, googleRedirHost))
+  HTTPClient http;
+  http.begin(fullLoginURL, loginFingerprint);
+  http.addHeader("Content-Type", "application/x-www-form-urlencoded"); // e.g.
+  String msg = String("grant_type=password") + 
+               "&client_id=" + clientID + 
+               "&client_secret=" + clientSecret + 
+               "&username=" + salesforceUsername + 
+               "&password=" + salesforcePassword;
+
+  int httpCode = http.POST(msg);
+  if(httpCode == 200)
   {
-    Serial.println("Connected, reading stuff");
-    DPRINTLN("Connected, reading stuff");
-    lastUpdateLog += "Connected, reading stuff\n";
-    File f = SPIFFS.open(aclFilename, "w");
+    Serial.println("Login complete");
+    lastUpdateLog += "Login complete\n";
 
-    while(client.connected())
+    String loginResponse = http.getString();
+    int tokenIndex = loginResponse.indexOf("access_token");
+    int tokenStart = loginResponse.indexOf("\":\"", tokenIndex) + 3;
+    int tokenEnd = loginResponse.indexOf('"', tokenStart);
+  
+    String token = loginResponse.substring(tokenStart, tokenEnd);
+  
+    HTTPClient http2;
+    http2.begin(fullTagURL, tagFingerprint);
+    http2.addHeader("Authorization", String("Bearer ") + token);
+    int http2Code = http2.GET();
+    if(http2Code == 200)
     {
-      String line = client.readStringUntil('\n');
+      Serial.println("Tags acquired");
+      lastUpdateLog += "Tags acquired\n";
+      String tags = http2.getString();
 
-      int separatorIndex = line.indexOf('|');
-      if(separatorIndex != -1)
+      File f = SPIFFS.open(aclFilename, "w");
+
+      int startTagIndex = 1;
+      int endTagIndex = tags.indexOf('|');
+      while(endTagIndex != -1)
       {
-        String card = line.substring(separatorIndex + 1);
+        String card = tags.substring(startTagIndex, endTagIndex);
+
         card.trim();
         f.write((const uint8_t*)card.c_str(), card.length());
         f.write('\n');
-      }
 
-      lastUpdateLog += "Read Line: ";
-      lastUpdateLog += line;
-      lastUpdateLog += '\n';
-      DPRINTLN(line);
-      if(line == "\r")
-      {
-        success = true;
-        blinkTask.setBlinkCounts(1,1);
-        break;
+        startTagIndex = endTagIndex + 1;
+        endTagIndex = tags.indexOf('|', startTagIndex);
       }
+      blinkTask.setBlinkCounts(1,1);
+      success = true;
     }
-    f.close();
+    else
+    {
+      Serial.println("Fail at tag get");
+      lastUpdateLog += "Fail at tag get\n";
+      blinkTask.setBlinkCounts(1,2);
+    }
   }
   else
   {
-    blinkTask.setBlinkCounts(1,2);
-    lastUpdateLog += "Failed at connecting";
-    DPRINTLN("Failed at connecting");
+    Serial.println("failed at auth");
+    lastUpdateLog += "failed at auth\n";
+    blinkTask.setBlinkCounts(1,3);
   }
-  client.stop();
+
   DPRINTLN("Done with reading");
   lastUpdateLog += "Done with reading\n";
   return success;
