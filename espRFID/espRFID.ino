@@ -59,7 +59,6 @@ void setup() {
   Serial.println("I'm booting");
   SPIFFS.begin();
 
-//    WiFi.begin(ssid, password);
 }
 
 

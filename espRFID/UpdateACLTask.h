@@ -38,6 +38,8 @@ private:
 
   bool isAutomatedUpdate();
 
+  uint32_t retryCount;
+  uint32_t nextRetryInterval;
   uint32_t nextAutomatedTime;
   uint32_t automatedInterval;
   String lastUpdateLog;

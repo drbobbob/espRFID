@@ -15,7 +15,7 @@
 
 const int BUTTON_HOLD_TIME = 14000;
 
-//#define DEBUG   //If you comment this line, the DPRINT & DPRINTLN lines are defined as blank.
+#define DEBUG   //If you comment this line, the DPRINT & DPRINTLN lines are defined as blank.
 #ifdef DEBUG    //Macros are usually in all capital letters.
   #define DPRINT(...)    Serial.print(__VA_ARGS__)     //DPRINT is a macro, debug print
   #define DPRINTLN(...)  Serial.println(__VA_ARGS__)   //DPRINTLN is a macro, debug print with new line
@@ -36,7 +36,9 @@ const char* aclFilename = "acl";
 
 
 UpdateACLTask::UpdateACLTask(uint32_t interval, DoorLatchTask& _latchTask, BlinkPatternTask& _blinkTask)
-: TimedTask(0)
+: TimedTask(10000)
+, retryCount(5)
+, nextRetryInterval(10000)
 , nextAutomatedTime(interval)
 , automatedInterval(interval)
 , lastUpdateLog()
@@ -82,11 +84,19 @@ bool UpdateACLTask::isAutomatedUpdate()
 
 void UpdateACLTask::automatedUpdate()
 {
-  if(downloadACL())
+  if(downloadACL() || retryCount == 0)
   {
     incRunTime(automatedInterval);
     nextAutomatedTime = runTime;
+    retryCount = 5;
   }
+  else
+  {
+    incRunTime(nextRetryInterval);
+    nextAutomatedTime = runTime;
+    retryCount--;
+  }
+
 }
 
 void UpdateACLTask::manualUpdate()
@@ -95,6 +105,12 @@ void UpdateACLTask::manualUpdate()
   {
     setRunTime(nextAutomatedTime);
     latchTask.blinkDoor();
+  }
+  else
+  {
+    incRunTime(nextRetryInterval); 
+    nextAutomatedTime = runTime;
+    retryCount--;
   }
 }
 
