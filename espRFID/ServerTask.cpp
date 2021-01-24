@@ -121,6 +121,8 @@ void ServerTask::WaitForConnectionState(uint32_t now)
     Serial.println("HTTP server started");
 
     MDNS.addService("http", "tcp", 80);
+
+    configTime(3 * 3600, 0, "pool.ntp.org", "time.nist.gov");
     
     CurrentState = SERVER_RUNNING;
     setRunTime(now - 1);
