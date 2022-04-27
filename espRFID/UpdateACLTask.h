@@ -42,6 +42,7 @@ private:
   uint32_t nextRetryInterval;
   uint32_t nextAutomatedTime;
   uint32_t automatedInterval;
+  bool isURLUpdate;
   String lastUpdateLog;
   DoorLatchTask& latchTask;
   BlinkPatternTask& blinkTask;

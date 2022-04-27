@@ -41,6 +41,7 @@ UpdateACLTask::UpdateACLTask(uint32_t interval, DoorLatchTask& _latchTask, Blink
 , nextRetryInterval(10000)
 , nextAutomatedTime(interval)
 , automatedInterval(interval)
+, isURLUpdate(false)
 , lastUpdateLog()
 , latchTask(_latchTask)
 , blinkTask(_blinkTask)
@@ -65,11 +66,13 @@ void UpdateACLTask::run(uint32_t now)
 void UpdateACLTask::startManualTimer()
 {
   setRunTime(millis() + BUTTON_HOLD_TIME);
+  isURLUpdate = false;
 }
 
 void UpdateACLTask::startShortManualTimer()
 {
   setRunTime(millis());
+  isURLUpdate = true;
 }
 
 void UpdateACLTask::stopManualTimer()
@@ -104,7 +107,10 @@ void UpdateACLTask::manualUpdate()
   if(downloadACL())
   {
     setRunTime(nextAutomatedTime);
-    latchTask.blinkDoor();
+    if(!isURLUpdate)
+    {
+      latchTask.blinkDoor();
+    }
   }
   else
   {
