@@ -32,12 +32,12 @@
 //pin definitions
 //pins with pullup: 4, 5, 12, 13, 14
 
-const int RELEASE_BUTTON = 14;
-const int RELAY_PIN = 5;
+const int RELEASE_BUTTON = 4;
+const int RELAY_PIN = 12;
 const int LED1_PIN = 13;
 const int LED2_PIN = 15;
-const int RFID_READ_PIN = 12;
-const int RFID_WRITE_PIN = 4;
+const int RFID_READ_PIN = 14;
+const int RFID_WRITE_PIN = 16;
 
 SoftwareSerial rfidSerial(RFID_READ_PIN, RFID_WRITE_PIN);
 
